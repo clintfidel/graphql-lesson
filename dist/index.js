@@ -15,20 +15,26 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const core_1 = require("@mikro-orm/core");
 const express_1 = __importDefault(require("express"));
 const winston_1 = __importDefault(require("winston"));
-const body_parser_1 = __importDefault(require("body-parser"));
+const apollo_server_express_1 = require("apollo-server-express");
+const type_graphql_1 = require("type-graphql");
 const mikro_orm_config_1 = __importDefault(require("./mikro-orm.config"));
+const hello_1 = require("./resolvers/hello");
+const post_1 = require("./resolvers/post");
 const main = () => __awaiter(void 0, void 0, void 0, function* () {
     const orm = yield core_1.MikroORM.init(mikro_orm_config_1.default);
     orm.getMigrator().up();
     const app = express_1.default();
-    app.use(body_parser_1.default.json());
-    app.use(body_parser_1.default.urlencoded({ extended: false }));
-    app.get('*', (_, res) => {
-        res.send('welcome to 2021');
+    const apolloServer = new apollo_server_express_1.ApolloServer({
+        schema: yield type_graphql_1.buildSchema({
+            resolvers: [hello_1.HelloResolver, post_1.PostResolver],
+            validate: false
+        }),
+        context: () => ({ em: orm.em })
     });
+    apolloServer.applyMiddleware({ app });
     const port = process.env.PORT || 5050;
     app.listen(port, () => {
-        winston_1.default.info('app running on port 4000');
+        winston_1.default.info('app running on port 5050');
     });
 });
 main();
